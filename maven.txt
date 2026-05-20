@@ -3,3 +3,17 @@ mvn archetype:generate \
 -DartifactId=demo-app \
 -DarchetypeArtifactId=maven-archetype-quickstart \
 -DinteractiveMode=false
+
+
+
+nano src/main/java/com/sunny/App.java
+package com.sunny;
+
+public class App {
+
+    public static void main(String[] args) {
+
+        System.out.println("Hii sunny kumar");
+
+    }
+}
