@@ -1,0 +1,96 @@
+sudo apt update
+
+sudo apt install openjdk-17-jdk -y
+java -version
+
+sudo apt install git -y
+git --version
+
+sudo apt install maven -y
+mvn -version
+
+sudo apt update
+sudo apt install docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin -y
+docker --version
+sudo systemctl enable docker
+sudo systemctl start docker
+
+sudo usermod -aG docker $USER
+newgrp docker
+
+docker run hello-world
+
+sudo apt update
+sudo apt install jenkins -y
+sudo systemctl enable jenkins
+sudo systemctl start jenkins
+sudo systemctl status jenkins
+
+open jenkins: http://YOUR_IP:8080
+sudo cat /var/lib/jenkins/secrets/initialAdminPassword
+
+docker login
+Username
+Password / Access Token
+
+Step 11: Initialize Docker Swarm
+docker swarm init
+docker node ls
+
+Step 12: Create Maven Project
+Step 13: Create Dockerfile
+
+Step 14: Test Build
+mvn clean package
+docker build -t sunnymca107/java-app:1 .
+docker run -d -p 8080:8080 sunnymca107/java-app:1
+docker push sunnymac107/java-app:1
+
+step 15: Create Jenkinsfile
+
+git init
+git add .
+git commit -m "first maven "
+git branch -M main
+git remote add origin htttps://github.com
+git push -u origin main
+
+Step 17: Create Jenkins Pipeline
+New Item
+↓
+Pipeline
+↓
+Pipeline Script from SCM
+↓
+Git
+Repository
+https://github.com/USERNAME/REPOSITORY.gi
+Branch
+main
+Script Path
+Jenkinsfile
+Save.
+build now
+
+
+docker swarm init
+docker node ls
+docker service create --name java-app -p 8080:8080 username/java-app:1
+docker service ls
+docker service ps java-app
+docker ps
+docker service logs java-app
+
+
+
+
+
+
+
+
+
+
+
+
+
+
