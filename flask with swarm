@@ -1,0 +1,176 @@
+flask-app/
+│
+├── app.py
+├── requirements.txt
+├── Dockerfile
+└── Jenkinsfile
+
+STEP 1 Install Git
+STEP 2 Install python
+sudo apt install python3 python3-pip -y
+python3 --version
+
+STEP 3 Install Docker--
+sudo apt install docker.io -y
+sudo systemctl start docker
+sudo systemctl enable docker
+sudo usermod -aG docker $USER
+newgrp docker
+
+STEP 4 Install Java
+sudo apt install openjdk-17-jdk -y
+
+STEP 5 Install Jenkins
+sudo apt install jenkins -y
+sudo systemctl start jenkins
+sudo systemctl enable jenkins
+sudo systemctl status jenkins
+
+STEP 6 Open Jenkins
+http://localhost:8080
+sudo cat /var/lib/jenkins/secrets/initialAdminPassword
+
+STEP 7 Create Flask Project
+mkdir flask-app
+cd flask-app
+flask-app/
+├── app.py
+├── requirements.txt
+├── Dockerfile
+└── Jenkinsfile
+
+flask-app/app.py-----
+from flask import Flask
+app=Flask(__name__)
+@app.route("/")
+def home():
+    return "Flask CI/CD Pipeline"
+if __name__=="__main__":
+    app.run(host="0.0.0.0",port=5000)
+
+STEP 9 Create requirements.txt-----
+
+STEP 10 Install Flask Packages
+Run inside project folder
+pip3 install -r requirements.txt
+
+STEP 11 Test Flask
+python3 app.py
+http://localhost:5000
+
+STEP 12 Create Dockerfile-------
+FROM python:3.12-slim
+WORKDIR /app
+COPY requirements.txt .
+RUN pip install -r requirements.txt
+COPY . .
+EXPOSE 5000
+CMD ["python","app.py"]
+
+STEP 13 Build Docker Image--------
+Run inside
+flask-app
+docker build -t YOUR_USERNAME/flask-app:1 .
+docker images
+
+STEP 14 Run Docker Container
+docker run -d -p 5000:5000 YOUR_USERNAME/flask-app:1
+Check : docker ps
+http://localhost:5000
+
+STEP 15 Push Docker Image
+docker login
+docker push YOUR_USERNAME/flask-app:1
+
+STEP 16 Initialize Docker Swarm
+docker swarm init
+Check  : docker node ls
+
+STEP 17 Deploy Docker Swarm
+docker service create \
+--name flask-app \
+-p 5000:5000 \
+YOUR_USERNAME/flask-app:1
+
+check : docker service ls
+docker service ps flask-app
+
+docker service ls
+docker service ps flask-app
+
+STEP 18 create jenkins
+pipeline {
+    agent any
+    environment {
+        IMAGE="YOUR_USERNAME/flask-app:${BUILD_NUMBER}"
+    }
+    stages {
+        stage('Clone') {
+            steps {
+                git 'https://github.com/YOUR_USERNAME/flask-app.git'
+            }
+        }
+        stage('Install Dependencies') {
+            steps {
+                sh 'pip3 install -r requirements.txt'
+            }
+        }
+        stage('Docker Build') {
+            steps {
+                sh 'docker build -t $IMAGE .'
+            }
+        }
+        stage('Docker Push') {
+            steps {
+                sh 'docker push $IMAGE'
+            }
+        }
+        stage('Deploy Docker Swarm') {
+            steps {
+                sh '''
+                docker service rm flask-app || true
+                docker service create \
+                --name flask-app \
+                -p 5000:5000 \
+                $IMAGE
+                '''
+            }
+        }
+    }
+}
+
+STEP 19 Push Project to GitHub-----
+Run in Terminal
+git init
+git add .
+git commit -m "Initial Commit"
+git branch -M main
+git remote add origin https://github.com/YOUR_USERNAME/flask-app.git
+git push -u origin main
+
+STEP 20 Configure Jenkins
+Browser
+
+New Item
+↓
+Pipeline
+↓
+Pipeline Script from SCM
+↓
+Git
+↓
+Repository URL
+↓
+Branch = main
+↓
+Script Path = Jenkinsfile
+↓
+Save
+STEP 21 Run Pipeline
+Build Now
+
+STEP 22 Verify Deployment
+Run-------
+docker service ls
+docker ps
+docker service ps flask-app
