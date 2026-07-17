@@ -1,0 +1,175 @@
+STEP 1 Install Git
+
+Step 2 install node.js
+sudo apt install nodejs npm -y
+node -v
+
+STEP 3 Install Docker
+
+STEP 4 Install Java 
+sudo apt install openjdk-17-jdk -y
+
+STEP 5 install jenkins
+http://localhost:8080
+sudo cat /var/lib/jenkins/secrets/initialAdminPassword
+
+STEP 6 Install kubectl
+sudo snap install kubectl --classic
+kubectl version --client
+
+STEP 7 Install Minikube
+curl -LO https://storage.googleapis.com/minikube/releases/latest/minikube-linux-amd64
+sudo install minikube-linux-amd64 /usr/local/bin/minikube
+
+minikube start --driver==docker
+kubectl get nodes
+
+STEP 8 Create React Project------
+npx create-react-app react-demo
+cd react-demo
+npm start
+
+react-demo/
+src/
+public/
+package.json
+Dockerfile
+Jenkinsfile
+deployment.yaml
+service.yaml
+
+STEP 9 Create Dockerfile
+FROM node:20
+WORKDIR /app
+COPY package*.json ./
+RUN npm install
+COPY . .
+RUN npm run build
+RUN npm install -g serve
+EXPOSE 3000
+CMD ["serve","-s","build","-l","3000"]
+
+STEP 10 Build Docker Image
+docker build -t sunnymca107/react-demo:1 .
+docker run -d -p 3000:3000 sunnymcaa0107/react-demo:1
+
+STEP 11 Push Docker Image
+docker login
+docker push sunnymca107/react-demo:1
+
+deployment.yaml------
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: react-app
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: react-app
+  template:
+    metadata:
+      labels:
+        app: react-app
+    spec:
+      containers:
+      - name: react-app
+        image: YOUR_DOCKER_USERNAME/react-demo:1
+        ports:
+        - containerPort: 3000
+
+Service.yml------
+apiVersion: v1
+kind: Service
+metadata:
+  name: react-service
+spec:
+  type: NodePort
+  selector:
+    app: react-app
+  ports:
+  - port: 3000
+    targetPort: 3000
+    nodePort: 30080
+
+kubectl apply -f deployment.yaml
+kubectl apply -f service.yaml
+
+check:
+kubectl get pods
+kubectl get deployments
+kubectl get services
+
+open:
+minikube service react-service
+
+STEP 15 Create Jenkinsfile
+pipeline {
+    agent any
+    environment {
+        IMAGE="sunnymca107/react-demo:${BUILD_NUMBER}"
+    }
+    stages {
+        stage('Clone') {
+            steps {
+                git 'https://github.com/sunnymca107/react-demo.git'
+            }
+        }
+        stage('Install') {
+            steps {
+                sh 'npm install'
+            }
+        }
+        stage('Build') {
+            steps {
+                sh 'npm run build'
+            }
+        }
+        stage('Docker Build') {
+            steps {
+                sh 'docker build -t $IMAGE .'
+            }
+        }
+        stage('Docker Push') {
+            steps {
+                sh 'docker push $IMAGE'
+            }
+        }
+        stage('Deploy Kubernetes') {
+            steps {
+                sh 'kubectl apply -f deployment.yaml'
+                sh 'kubectl apply -f service.yaml'
+            }
+        }
+    }
+}
+    
+git init
+git add .
+git commit -m "Initial Commit"
+git branch -M main
+git remote add origin https://github.com/YOUR_USERNAME/react-demo.git
+git push -u origin main
+
+STEP 17 Configure Jenkins-----
+Open Jenkins in your browser.
+Click New Item.
+Enter React-CICD as the name.
+Select Pipeline.
+Click OK.
+Under Pipeline, choose Pipeline script from SCM.
+Select Git.
+Enter your GitHub repository URL.
+Branch: main
+Script Path: Jenkinsfile
+Click Save.
+Build now 
+
+STEP 19 Verify Deployment
+kubectl get pods
+kubectl get deployments
+kubectl get services
+kubectl describe deployment react-app
+kubectl logs <pod-name>
+
+minikube service react-service
