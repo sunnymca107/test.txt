@@ -1,0 +1,178 @@
+java-app/
+├── src/
+│   ├── main/
+│   └── test/
+├── pom.xml
+├── Dockerfile
+├── deployment.yaml
+├── service.yaml
+└── Jenkinsfile
+
+sudo apt update
+sudo apt install openjdk-17-jdk -y
+sudo apt install maven -y
+sudo apt install git -y
+sudo apt install docker.io -y
+sudo systemctl start docker
+sudo systemctl enable docker
+sudo usermod -aG docker $USER
+newgrp docker
+sudo apt install jenkins -y
+sudo systemctl enable jenkins
+sudo systemctl start jenkins
+
+install : sudo snap install kubectl --classic
+curl -LO https://storage.googleapis.com/minikube/releases/latest/minikube-linux-amd64
+sudo install minikube-linux-amd64 /usr/local/bin/minikube
+minikube start --driver=docker
+
+Create Maven Project :mvn archetype:generate
+mvn clean package
+target/app.jar
+
+java-app/Dockerfile
+FROM eclipse-temurin:17-jre
+WORKDIR /app
+COPY target/*.jar app.jar
+EXPOSE 8080
+ENTRYPOINT ["java","-jar","app.jar"]
+
+docker build -t sunnymca107/java-app:1 .
+docker run -d -p 8080:8080 sunnymca107/java-app:1
+docker login
+docker push sunnymca107/java-app:1
+
+deployment.yaml----
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: java-app
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: java-app
+  template:
+    metadata:
+      labels:
+        app: java-app
+    spec:
+      containers:
+      - name: java-app
+        image: sunnymca107/java-app:1
+        ports:
+        - containerPort: 8080
+
+service.yaml---
+apiVersion: v1
+kind: Service
+metadata:
+  name: java-service
+spec:
+  type: NodePort
+  selector:
+    app: java-app
+  ports:
+  - port: 8080
+    targetPort: 8080
+    nodePort: 30081
+kubectl apply -f deployment.yaml
+kubectl apply -f service.yaml
+kubectl get pods
+kubectl get deployments
+kubectl get services
+
+java-app/Jenkinsfile-------
+pipeline {
+    agent any
+    tools {
+        maven 'Maven'
+        jdk 'JDK17'
+    }
+    environment {
+        IMAGE = "sunnymca107/java-app:${BUILD_NUMBER}"
+    }
+    stages {
+        stage('Clone') {
+            steps {
+                git 'https://github.com/sunnymca107/java-app.git'
+            }
+        }
+        stage('Build') {
+            steps {
+                sh 'mvn clean package'
+            }
+        }
+        stage('Docker Build') {
+            steps {
+                sh 'docker build -t $IMAGE .'
+            }
+        }
+        stage('Docker Push') {
+            steps {
+                sh 'docker push $IMAGE'
+            }
+        }
+        stage('Deploy Kubernetes') {
+            steps {
+                sh 'kubectl apply -f deployment.yaml'
+                sh 'kubectl apply -f service.yaml'
+            }
+        }
+
+    }
+}
+
+git init
+git add .
+git commit -m "Initial Commit"
+git branch -M main
+git remote add origin https://github.com/YOUR_USERNAME/java-app.git
+git push -u origin main
+
+http://localhost:8080
+New Item
+↓
+Pipeline
+↓
+OK
+Pipeline Script from SCM
+↓
+Git
+↓
+Repository URL
+↓
+Branch = main
+↓
+Script Path = Jenkinsfile
+
+Open your Jenkins pipeline:
+Configure
+↓
+Build Triggers
+↓
+☑ Build periodically
+* * * * * for every min
+
+
+build now
+
+kubectl get pods
+kubectl get deployments
+kubectl get services
+kubectl describe deployment java-app
+kubectl logs <pod-name>
+minikube service java-service
+
+
+
+
+
+
+
+
+
+
+
+
+
