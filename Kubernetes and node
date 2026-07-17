@@ -1,0 +1,226 @@
+Step 1: Install Git
+
+Step 2: Install Node.js and npm
+sudo apt install nodejs npm -y
+node -v
+npm -v
+
+Step 3: Install Docker---------
+sudo apt install docker.io -y
+sudo systemctl start docker
+sudo systemctl enable docker
+sudo usermod -aG docker $USER
+newgrp docker
+docker --version
+
+Step 4: Install Java
+sudo apt install openjdk-17-jdk -y
+
+Step 5: Install Jenkin-----
+sudo apt install jenkins -y
+sudo systemctl start jenkins
+sudo systemctl enable jenkins
+http://localhost:8080
+sudo cat /var/lib/jenkins/secrets/initialAdminPassword
+
+Step 6: Install Kubernetes Tools-------
+sudo snap install kubectl --classic
+curl -LO https://storage.googleapis.com/minikube/releases/latest/minikube-linux-amd64
+sudo install minikube-linux-amd64 /usr/local/bin/minikube
+minikube start --driver=docker
+Check: kubectl get nodes
+
+Step 7: Create Node.js Project
+mkdir node-app
+cd node-app
+npm init -y
+Install Express: npm install express
+
+Project Structure-------
+node-app/
+├── app.js
+├── package.json
+├── Dockerfile
+├── deployment.yaml
+├── service.yaml
+└── Jenkinsfile
+
+Create app.js------
+const express = require('express');
+const app = express();
+app.get('/', (req, res) => {
+    res.send('Node.js CI/CD Pipeline');
+});
+app.listen(3000, () => {
+    console.log('Server running on port 3000');
+});
+
+Test Application-----------
+node app.js
+Browser: http://localhost:3000
+
+Create Dockerfile------------
+FROM node:20
+WORKDIR /app
+COPY package*.json ./
+RUN npm install
+COPY . .
+EXPOSE 3000
+CMD ["node","app.js"]
+
+STEP 11 :Build Docker Image---------------
+docker build -t YOUR_DOCKER_USERNAME/node-app:1 .
+Check images:
+docker images
+
+Step 12: Run Docker Container------------------------
+docker run -d -p 3000:3000 YOUR_DOCKER_USERNAME/node-app:1
+docker ps
+
+Step 13: Push Image to Docker Hub
+docker login
+docker push sunnymca107/node-app:1
+
+deployment.yml----------------
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: node-app
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: node-app
+  template:
+    metadata:
+      labels:
+        app: node-app
+    spec:
+      containers:
+      - name: node-app
+        image: YOUR_DOCKER_USERNAME/node-app:1
+        ports:
+        - containerPort: 3000
+
+Service.yml-----------------------------
+apiVersion: v1
+kind: Service
+metadata:
+  name: node-service
+spec:
+  type: NodePort
+  selector:
+    app: node-app
+  ports:
+  - port: 3000
+    targetPort: 3000
+    nodePort: 30080
+
+Step 16: Deploy to Kubernetes---------------------
+kubectl apply -f deployment.yaml
+kubectl apply -f service.yaml
+
+Verify: kubectl get pods
+kubectl get deployments
+kubectl get services
+
+Open application: minikube service node-service
+
+Step 17: Create Jenkinsfile ------------------------
+pipeline {
+    agent any
+    environment {
+        IMAGE = "YOUR_DOCKER_USERNAME/node-app:${BUILD_NUMBER}"
+    }
+    stages {
+        stage('Clone') {
+            steps {
+                git 'https://github.com/YOUR_GITHUB_USERNAME/node-app.git'
+            }
+        }
+        stage('Install') {
+            steps {
+                sh 'npm install'
+            }
+        }
+        stage('Build Docker Image') {
+            steps {
+                sh 'docker build -t $IMAGE .'
+            }
+        }
+        stage('Push Docker Image') {
+            steps {
+                sh 'docker push $IMAGE'
+            }
+        }
+        stage('Deploy to Kubernetes') {
+            steps {
+                sh 'kubectl apply -f deployment.yaml'
+                sh 'kubectl apply -f service.yaml'
+            }
+        }
+    }
+}
+
+Step 18: Push Project to GitHub------------
+git init
+git add .
+git commit -m "Initial Commit"
+git branch -M main
+git remote add origin https://github.com/YOUR_GITHUB_USERNAME/node-app.git
+git push -u origin main
+
+Step 19: Create Jenkins Pipeline
+Browser---------------------------
+http://localhost:8080
+New Item
+Pipeline
+OK
+Pipeline Script from SCM
+Git
+Repository URL
+Branch = main
+Script Path = Jenkinsfile
+Save
+Step 20: Configure Jenkins Cron Job
+In Jenkins:
+
+Pipeline
+    ↓
+Configure
+    ↓
+Build Triggers
+    ↓
+✔ Build periodically
+Examples:
+Every minute (testing):
+* * * * *
+Every 5 minutes:
+*/5 * * * *
+Every day at 10:00 AM:
+0 10 * * *
+Click Save.
+Step 21: Run the Pipeline
+The pipeline automatically executes:
+GitHub
+   ↓
+Clone Repository
+   ↓
+npm install
+   ↓
+Docker Build
+   ↓
+Docker Push
+   ↓
+Deploy to Kubernetes
+Step 22: Verify Deployment
+Run in Terminal --------------
+kubectl get pods
+kubectl get deployments
+kubectl get services
+kubectl describe deployment node-app
+kubectl logs <pod-name>
+
+
+
+
